@@ -106,7 +106,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Cài đặt</Text>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/edit-profile' as any)}>
           <Ionicons name="create-outline" size={22} color={COLORS.primary} />
           <Text style={styles.menuText}>Chỉnh sửa hồ sơ</Text>
           <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
