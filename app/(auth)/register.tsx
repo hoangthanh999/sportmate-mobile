@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { authApi } from '../../services/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/config';
+import { registerFcmToken } from '../../services/notificationHelper';
 
 const GENDERS = [
   { label: 'Nam', value: 1 },
@@ -42,6 +43,8 @@ export default function RegisterScreen() {
         { userId: res.userId, fullName: res.fullName, onboardingDone: false },
         res.accessToken, res.refreshToken
       );
+      // Đăng ký FCM token sau khi đăng ký — fire & forget, không block navigation
+      registerFcmToken();
       router.replace('/(onboarding)');
     } catch (err: any) {
       Alert.alert('Đăng ký thất bại', err.response?.data?.error || 'Có lỗi xảy ra');

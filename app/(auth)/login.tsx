@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { authApi } from '../../services/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { COLORS } from '../../constants/config';
+import { registerFcmToken } from '../../services/notificationHelper';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -29,6 +30,8 @@ export default function LoginScreen() {
         { userId: res.userId, fullName: res.fullName, onboardingDone: res.onboardingDone },
         res.accessToken, res.refreshToken
       );
+      // Đăng ký FCM token sau khi login — fire & forget, không block navigation
+      registerFcmToken();
       if (!res.onboardingDone) router.replace('/(onboarding)');
       else router.replace('/(tabs)');
     } catch (err: any) {
