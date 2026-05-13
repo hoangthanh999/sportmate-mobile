@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator,
+  Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +14,18 @@ export default function UserProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [ratings, setRatings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetail, setReportDetail] = useState('');
+  const [reportSending, setReportSending] = useState(false);
+
+  const REPORT_REASONS = [
+    { key: 'inappropriate_content', label: '🚫 Nội dung không phù hợp' },
+    { key: 'spam', label: '📢 Spam / Quảng cáo' },
+    { key: 'harassment', label: '😠 Quấy rối / Bắt nạt' },
+    { key: 'fake_account', label: '🎭 Tài khoản giả mạo' },
+    { key: 'other', label: '⚠️ Lý do khác' },
+  ];
 
   useEffect(() => {
     const uid = parseInt(id);
@@ -47,11 +60,30 @@ export default function UserProfileScreen() {
   };
 
   const handleReport = () => {
-    Alert.alert('Báo cáo', 'Lý do báo cáo?', [
-      { text: 'Nội dung không phù hợp', onPress: () => reportApi.report({ targetUserId: parseInt(id), reason: 'inappropriate_content' }) },
-      { text: 'Spam', onPress: () => reportApi.report({ targetUserId: parseInt(id), reason: 'spam' }) },
-      { text: 'Hủy', style: 'cancel' },
-    ]);
+    setReportReason('');
+    setReportDetail('');
+    setReportModalVisible(true);
+  };
+
+  const submitReport = async () => {
+    if (!reportReason) {
+      Alert.alert('Chưa chọn lý do', 'Vui lòng chọn lý do báo cáo.');
+      return;
+    }
+    setReportSending(true);
+    try {
+      await reportApi.report({
+        targetUserId: parseInt(id),
+        reason: reportReason,
+        detail: reportDetail.trim() || undefined,
+      });
+      setReportModalVisible(false);
+      Alert.alert('Đã gửi báo cáo', 'Cảm ơn bạn. Chúng tôi sẽ xem xét trong thời gian sớm nhất.');
+    } catch (err: any) {
+      Alert.alert('Lỗi', err.response?.data?.error ?? 'Không thể gửi. Thử lại sau.');
+    } finally {
+      setReportSending(false);
+    }
   };
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
@@ -151,6 +183,70 @@ export default function UserProfileScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Report Modal */}
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Báo cáo người dùng</Text>
+            <Text style={styles.modalSubtitle}>Chọn lý do vi phạm</Text>
+
+            {REPORT_REASONS.map(r => (
+              <TouchableOpacity
+                key={r.key}
+                style={[styles.reasonBtn, reportReason === r.key && styles.reasonBtnActive]}
+                onPress={() => setReportReason(r.key)}
+              >
+                <Text style={[styles.reasonText, reportReason === r.key && styles.reasonTextActive]}>
+                  {r.label}
+                </Text>
+                {reportReason === r.key && (
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+
+            <Text style={[styles.modalSubtitle, { marginTop: 16 }]}>Chi tiết (tuỳ chọn)</Text>
+            <TextInput
+              style={styles.detailInput}
+              placeholder="Mô tả thêm về vi phạm..."
+              placeholderTextColor={COLORS.textMuted}
+              value={reportDetail}
+              onChangeText={setReportDetail}
+              multiline
+              numberOfLines={3}
+              maxLength={200}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelModalBtn}
+                onPress={() => setReportModalVisible(false)}
+              >
+                <Text style={styles.cancelModalText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.sendReportBtn, !reportReason && { opacity: 0.5 }]}
+                onPress={submitReport}
+                disabled={!reportReason || reportSending}
+              >
+                {reportSending
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={styles.sendReportText}>Gửi báo cáo</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -184,4 +280,41 @@ const styles = StyleSheet.create({
   chatBtn: { flex: 1 },
   chatGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 14 },
   chatText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+
+  // Report Modal
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  modalSheet: {
+    backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, paddingBottom: 40, borderWidth: 1, borderColor: COLORS.border,
+  },
+  modalHandle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: COLORS.border, alignSelf: 'center', marginBottom: 20,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  modalSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginBottom: 12, fontWeight: '600' },
+  reasonBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 13, paddingHorizontal: 14, borderRadius: 12, marginBottom: 8,
+    backgroundColor: COLORS.surfaceLight, borderWidth: 1, borderColor: COLORS.border,
+  },
+  reasonBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '15' },
+  reasonText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '600' },
+  reasonTextActive: { color: COLORS.text },
+  detailInput: {
+    backgroundColor: COLORS.surfaceLight, borderRadius: 12, padding: 12,
+    color: COLORS.text, fontSize: 14, minHeight: 80, textAlignVertical: 'top',
+    borderWidth: 1, borderColor: COLORS.border, marginBottom: 20,
+  },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  cancelModalBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+    backgroundColor: COLORS.surfaceLight, borderWidth: 1, borderColor: COLORS.border,
+  },
+  cancelModalText: { color: COLORS.textSecondary, fontWeight: '700', fontSize: 15 },
+  sendReportBtn: {
+    flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+    backgroundColor: COLORS.error,
+  },
+  sendReportText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
