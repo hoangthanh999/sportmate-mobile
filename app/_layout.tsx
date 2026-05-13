@@ -28,6 +28,7 @@ export default function RootLayout() {
           <Stack.Screen name="session/rate" options={{ presentation: 'card' }} />
           <Stack.Screen name="user/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="privacy-list" options={{ presentation: 'card' }} />
+          <Stack.Screen name="edit-profile" options={{ presentation: 'card' }} />
         </Stack>
       </QueryClientProvider>
     </GestureHandlerRootView>
