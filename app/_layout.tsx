@@ -25,7 +25,9 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="session/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="session/rate" options={{ presentation: 'card' }} />
           <Stack.Screen name="user/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="privacy-list" options={{ presentation: 'card' }} />
         </Stack>
       </QueryClientProvider>
     </GestureHandlerRootView>

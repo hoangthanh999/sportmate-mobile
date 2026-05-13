@@ -96,6 +96,26 @@ export default function SessionDetailScreen() {
             <Text style={{ color: COLORS.error, fontWeight: '700' }}>🗑️ Hủy buổi tập (host)</Text>
           </TouchableOpacity>
         )}
+
+        {/* Nút đánh giá — hiện cho member (không phải host) sau khi buổi tập đã đóng */}
+        {!isHost && session.status !== 0 && session.hostId && (
+          <TouchableOpacity
+            style={styles.rateBtn}
+            onPress={() => router.push({
+              pathname: '/session/rate',
+              params: {
+                sessionId: id,
+                ratedId: String(session.hostId),
+                ratedName: session.hostName ?? 'Host',
+              },
+            } as any)}
+          >
+            <LinearGradient colors={['#FFD700', '#FFA500']} style={styles.rateBtnGrad}>
+              <Ionicons name="star" size={18} color="#1A1A2E" />
+              <Text style={styles.rateBtnText}>Đánh giá host buổi tập</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -128,4 +148,7 @@ const styles = StyleSheet.create({
   joinBtn: { borderRadius: 16, padding: 16, alignItems: 'center' },
   joinText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   cancelBtn: { alignItems: 'center', padding: 16, marginTop: 8, borderWidth: 1, borderColor: COLORS.error + '50', borderRadius: 16 },
+  rateBtn: { marginTop: 8 },
+  rateBtnGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, padding: 16 },
+  rateBtnText: { color: '#1A1A2E', fontSize: 17, fontWeight: '800' },
 });
